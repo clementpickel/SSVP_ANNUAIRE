@@ -1,6 +1,9 @@
 import snowflake.connector
 import pandas as pd
 import os
+import dotenv
+
+dotenv.load_dotenv()
 
 class AnnuaireHandler:
     def __init__(self):
