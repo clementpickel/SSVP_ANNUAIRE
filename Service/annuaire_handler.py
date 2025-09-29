@@ -17,90 +17,72 @@ class AnnuaireHandler:
         )
         self.cur = self.conn.cursor()
 
+    def get_id(self, email: str):
+        self.cur.execute("SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(%s)", (email,))
+        result = self.cur.fetchone()
+        return result if result else None
+
+    def get_id_sage(self, email: str):
+        self.cur.execute("SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(%s)", (email,))
+        result = self.cur.fetchone()
+        return result if result else None
+    
+    def get_sage_info(self, person_id: list[int]):
+        self.cur.execute("SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN = %s", (person_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+
+    def get_pn_email(self, person_id: list[int]):
+        self.cur.execute("SELECT ADRMAIL FROM ADRESSEEMAIL WHERE IDINDIVIDU = %s", (person_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+    def get_pn_phoe(self, person_id: int):
+        self.cur.execute("SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU = %s", (person_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+    def get_pn_adresse(self, person_id: list[int]):
+        self.cur.execute("""
+            SELECT 
+                CIVILITE, IDCIVILITE, ACHEMINEMENT, CODEPOSTAL, COMPLEMENTADR,
+                COMPLEMENTNOM, LIBVOIE, LIEUDITPOSTALOUBP, NOM, NUMVOIE,
+                PRENOM, CODEACTIONRECRUT, IDINDIVIDU
+            FROM INDIVIDUADRESSE 
+            WHERE IDINDIVIDU = %s
+        """, (person_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+    
+    def get_person_functions_pn(self, person_id: list[int]):
+        query = """
+        SELECT 
+            rl.LIBELLE_LIEN,
+            rt.LIB_TYPELIEN,
+            l.DATE_TEMP_DEBUT,
+            l.DATE_TEMP_FIN,
+            l.DATEANNULATION
+        FROM LIEN l
+        JOIN REF_LIEN rl ON rl.IDREF_LIEN = l.IDREF_LIEN
+        JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
+        WHERE l.IDINDIVIDU = %s
+        """
+        self.cur.execute(query, (person_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+
+
     def get_emails(self):
         self.cur.execute("SELECT DISTINCT ADRMAIL FROM ADRESSEEMAIL")
         emails = [row[0] for row in self.cur.fetchall()]
         return [" "] + emails
-
-    def get_person_functions(self, email: str):
-        query = """
-        SELECT 
-            rl.LIBELLE_LIEN,
-            rt.LIB_TYPELIEN,
-            l.DATE_TEMP_DEBUT,
-            l.DATE_TEMP_FIN,
-            l.DATEANNULATION
-        FROM ADRESSEEMAIL am
-        JOIN LIEN l ON l.IDINDIVIDU = am.IDINDIVIDU
-        JOIN REF_LIEN rl ON rl.IDREF_LIEN = l.IDREF_LIEN
-        JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
-        WHERE LOWER(am.ADRMAIL) = LOWER(:1)
-        """
-        self.cur.execute(query, (email,))
-        data = self.cur.fetchall()
-        cols = [desc[0] for desc in self.cur.description]
-        return pd.DataFrame(data, columns=cols)
-
-    def get_person_address(self, email: str) -> pd.DataFrame:
-        query = """
-        SELECT 
-            ia.CIVILITE,
-            ia.IDCIVILITE,
-            ia.ACHEMINEMENT,
-            ia.CODEPOSTAL,
-            ia.COMPLEMENTADR,
-            ia.COMPLEMENTNOM,
-            ia.LIBVOIE,
-            ia.LIEUDITPOSTALOUBP,
-            ia.NOM,
-            ia.NUMVOIE,
-            ia.PRENOM,
-            ia.CODEACTIONRECRUT,
-            ia.IDINDIVIDU
-        FROM ADRESSEEMAIL am
-        JOIN INDIVIDUADRESSE ia 
-            ON ia.IDINDIVIDU = am.IDINDIVIDU
-        WHERE LOWER(am.ADRMAIL) = LOWER(:1);
-        """
-        self.cur.execute(query, (email,))
-        data = self.cur.fetchall()
-        cols = [desc[0] for desc in self.cur.description]
-        return pd.DataFrame(data, columns=cols)
-
-    def get_person_phones(self, email: str) -> pd.DataFrame:
-        query = """
-        SELECT 
-            t.IDINDIVIDU,
-            t.INDICATIFTEL,
-            t.NUMTEL
-        FROM ADRESSEEMAIL am
-        JOIN TELEPHONE t 
-            ON t.IDINDIVIDU = am.IDINDIVIDU
-        WHERE LOWER(am.ADRMAIL) = LOWER(:1);
-        """
-        self.cur.execute(query, (email,))
-        data = self.cur.fetchall()
-        cols = [desc[0] for desc in self.cur.description]
-        return pd.DataFrame(data, columns=cols)
-
-
-    def get_person_functions_name(self, nom: str, prenom: str):
-        query = """
-        SELECT 
-            ia.IDINDIVIDU,
-            rl.LIBELLE_LIEN,
-            rt.LIB_TYPELIEN,
-            l.DATE_TEMP_DEBUT,
-            l.DATE_TEMP_FIN,
-            l.DATEANNULATION
-        FROM INDIVIDUADRESSE ia
-        JOIN LIEN l ON l.IDINDIVIDU = ia.IDINDIVIDU
-        JOIN REF_LIEN rl ON rl.IDREF_LIEN = l.IDREF_LIEN
-        JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
-        WHERE LOWER(ia.NOM) = LOWER(:1)
-          AND LOWER(ia.PRENOM) = LOWER(:2)
-        ORDER BY rl.LIBELLE_LIEN, l.DATE_TEMP_DEBUT;
-"""
 
     def close(self):
         self.cur.close()
