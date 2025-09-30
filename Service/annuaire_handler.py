@@ -2,6 +2,10 @@ import snowflake.connector
 import pandas as pd
 import os
 
+# for local testing
+# import dotenv 
+# laod_dotenv()
+
 class AnnuaireHandler:
     def __init__(self):
         self.conn = snowflake.connector.connect(
