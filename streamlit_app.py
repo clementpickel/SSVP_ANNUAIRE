@@ -11,39 +11,50 @@ sf = AnnuaireHandler()
 
 header_selector_option, params = header_selector()
 
-has_pn_id = False
-has_sage_id = False
-
-if params != None and params["email"] != " ":
+start = False
+if header_selector_option == "Email" and params["email"] != " ":
     email = params["email"]
     person_ids = sf.get_id(email)
     person_ids_sage = sf.get_id_sage(email)
+    start = True
+
+elif header_selector_option == "ID" and params["id"] != "":
+    individuid = params["id"]
+    person_ids = (individuid,)
+    person_ids_sage = (individuid,)
+    start = True
+
+elif header_selector_option == "Nom Prénom" and params is not None and params["nom"] != "" and params["prenom"] != "":
+    nom = params["nom"]
+    prenom = params["prenom"]
+    print(nom, prenom)
+    person_ids = sf.get_pn_id_from_name(nom, prenom)
+    person_ids_sage = sf.get_sage_id_from_name(nom, prenom)
+    start = True
+
+if start:
     if person_ids is None:
         st.error("Aucun individu trouvé pour cet email dans PNDATA.")
         st.stop()
-    else:
-        has_pn_id = True
 
     if person_ids is None:
         st.error("Aucun individu trouvé pour cet email dans PNDATA.")
         st.stop()
-    else:
-        has_sage_id = True
 
-    sage_info = sf.get_sage_info(person_ids_sage) if has_sage_id else None
+    sage_info = sf.get_sage_info(person_ids_sage) if person_ids_sage else None
     if sage_info is not None:
         sage_info = sage_info.replace("30/12/1899", np.nan)
 
-    pn_mail = sf.get_pn_email(person_ids) if has_pn_id else None
-    pn_adresse = sf.get_pn_adresse(person_ids) if has_pn_id else None
-    pn_phone = sf.get_pn_phone(person_ids) if has_pn_id else None
-    pn_functions = cleanup(sf.get_person_functions_pn(person_ids) if has_pn_id else None)
+    pn_mail = sf.get_pn_email(person_ids) if person_ids else None
+    pn_adresse = sf.get_pn_adresse(person_ids) if person_ids else None
+    pn_phone = sf.get_pn_phone(person_ids) if person_ids else None
+    pn_functions = cleanup(sf.get_person_functions_pn(person_ids) if person_ids else None)
 
     st.markdown("---")
     display_name_card(sage_info, pn_adresse)
 
     st.markdown("---")
-    display_ids(person_ids_sage if has_sage_id else None, person_ids if has_pn_id else None)
+    display_ids(person_ids_sage if person_ids_sage else None, person_ids if person_ids else None)
 
     st.markdown("---")
     display_mail_card(sage_info, pn_mail)

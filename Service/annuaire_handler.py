@@ -3,8 +3,8 @@ import pandas as pd
 import os
 
 # for local testing
-# import dotenv 
-# laod_dotenv()
+import dotenv 
+dotenv.load_dotenv()
 
 class AnnuaireHandler:
     def __init__(self):
@@ -23,7 +23,7 @@ class AnnuaireHandler:
 
     def get_id(self, email: str):
         self.cur.execute(
-            "SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(?)",
+            "SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(%s)",
             (email,)
         )
         result = self.cur.fetchone()
@@ -31,8 +31,24 @@ class AnnuaireHandler:
 
     def get_id_sage(self, email: str):
         self.cur.execute(
-            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(?)",
+            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(%s)",
             (email,)
+        )
+        result = self.cur.fetchone()
+        return result if result else None
+
+    def get_pn_id_from_name(self, nom: str, prenom: str):
+        self.cur.execute(
+            "SELECT IDINDIVIDU FROM INDIVIDUADRESSE WHERE LOWER(NOM) = LOWER(%s) AND LOWER(PRENOM) = LOWER(%s)",
+            (nom, prenom)
+        )
+        result = self.cur.fetchone()
+        return result if result else None
+
+    def get_sage_id_from_name(self, nom: str, prenom: str):
+        self.cur.execute(
+            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(NOM) = LOWER(%s) AND LOWER(PRENOM) = LOWER(%s)",
+            (nom, prenom)
         )
         result = self.cur.fetchone()
         return result if result else None
