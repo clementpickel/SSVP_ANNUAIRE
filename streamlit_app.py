@@ -31,7 +31,8 @@ if params != None and params["email"] != " ":
         has_sage_id = True
 
     sage_info = sf.get_sage_info(person_ids_sage) if has_sage_id else None
-    sage_info = sage_info.replace("30/12/1899", np.nan)
+    if sage_info is not None:
+        sage_info = sage_info.replace("30/12/1899", np.nan)
 
     pn_mail = sf.get_pn_email(person_ids) if has_pn_id else None
     pn_adresse = sf.get_pn_adresse(person_ids) if has_pn_id else None
