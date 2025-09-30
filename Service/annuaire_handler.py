@@ -18,19 +18,19 @@ class AnnuaireHandler:
         self.cur = self.conn.cursor()
 
     def get_id(self, email: str):
-        self.cur.execute("SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(%s)", (email,))
+        self.cur.execute("SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(:1)", (email,))
         result = self.cur.fetchone()
         return result if result else None
 
     def get_id_sage(self, email: str):
-        self.cur.execute("SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(%s)", (email,))
+        self.cur.execute("SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(:1)", (email,))
         result = self.cur.fetchone()
         return result if result else None
     
     def get_sage_info(self, person_ids: tuple[int]):
         if not person_ids:
             return None
-        self.cur.execute("SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN = %s", (person_ids,))
+        self.cur.execute("SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN = :1", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
@@ -39,7 +39,7 @@ class AnnuaireHandler:
     def get_pn_email(self, person_ids: tuple[int]):
         if not person_ids:
             return None
-        self.cur.execute("SELECT ADRMAIL FROM ADRESSEEMAIL WHERE IDINDIVIDU = %s", (person_ids,))
+        self.cur.execute("SELECT ADRMAIL FROM ADRESSEEMAIL WHERE IDINDIVIDU = :1", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
@@ -47,7 +47,7 @@ class AnnuaireHandler:
     def get_pn_phone(self, person_ids: tuple[int]):
         if not person_ids:
             return None
-        self.cur.execute("SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU = %s", (person_ids,))
+        self.cur.execute("SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU = :1", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
@@ -61,7 +61,7 @@ class AnnuaireHandler:
                 COMPLEMENTNOM, LIBVOIE, LIEUDITPOSTALOUBP, NOM, NUMVOIE,
                 PRENOM, CODEACTIONRECRUT, IDINDIVIDU
             FROM INDIVIDUADRESSE 
-            WHERE IDINDIVIDU = %s
+            WHERE IDINDIVIDU = :1
         """, (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
@@ -80,7 +80,7 @@ class AnnuaireHandler:
         FROM LIEN l
         JOIN REF_LIEN rl ON rl.IDREF_LIEN = l.IDREF_LIEN
         JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
-        WHERE l.IDINDIVIDU = %s
+        WHERE l.IDINDIVIDU = :1
         """
         self.cur.execute(query, (person_ids,))
         data = self.cur.fetchall()
