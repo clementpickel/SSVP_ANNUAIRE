@@ -22,12 +22,18 @@ class AnnuaireHandler:
         return "(" + ", ".join(str(item) for item in t) + ")"
 
     def get_id(self, email: str):
-        self.cur.execute(f"SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER({email})")
+        self.cur.execute(
+            "SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(?)",
+            (email,)
+        )
         result = self.cur.fetchone()
         return result if result else None
 
     def get_id_sage(self, email: str):
-        self.cur.execute(f"SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER({email})")
+        self.cur.execute(
+            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(?)",
+            (email,)
+        )
         result = self.cur.fetchone()
         return result if result else None
     
