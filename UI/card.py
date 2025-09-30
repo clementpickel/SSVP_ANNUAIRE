@@ -216,11 +216,11 @@ def display_cd_card(cd_info: pd.DataFrame):
             st.text(f"Adresse: {row.ADRESS1 if row.ADRESS1 else ''} {row.ADRESS2} {row.ADRESS3} {row.ADRESS4} {row.CODEPOSTAL} {row.VILLE} {row.CODEDUPAYS}")
             if pd.notna(row.IDENTIFIANTCONTACTPN):
                 if st.button("Search by ID", key=f"search_{row.IDENTIFIANTCONTACTPN}"):
-                    st.experimental_set_query_params(selectedoption="ID", id=int(row.IDENTIFIANTCONTACTPN)) # deprecated
-                    # st.query_params.clear()
-                    # st.query_params.from_dict({
-                    #     "selectedoption": "ID",
-                    #     "id": str(int(row.IDENTIFIANTCONTACTPN))
-                    # })
+                    # st.experimental_set_query_params(selectedoption="ID", id=int(row.IDENTIFIANTCONTACTPN)) # deprecated
+                    st.query_params.clear()
+                    st.query_params.from_dict({
+                        "selectedoption": "ID",
+                        "id": str(int(row.IDENTIFIANTCONTACTPN))
+                    })
             st.markdown("---")
             
