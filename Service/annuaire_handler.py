@@ -130,7 +130,7 @@ class AnnuaireHandler:
 
     def get_persons_by_cd(self, cd: str):
         self.cur.execute(
-            "SELECT * FROM BENEVOLES_SAGE WHERE ETABLISSEMENT = %s",
+            "SELECT * FROM BENEVOLES_SAGE WHERE ETABLISSEMENT = ?",
             (cd,)
         )
         data = self.cur.fetchall()
