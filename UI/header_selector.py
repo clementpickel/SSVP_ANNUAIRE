@@ -7,8 +7,12 @@ sf = AnnuaireHandler()
 def load_emails():
     return sf.get_emails()
 
+@st.cache_data(ttl=3600)
+def load_cd():
+    return sf.get_cd()
+
 def header_selector():
-    options = ["Email", "Nom Prénom", "ID", "Téléphone"]
+    options = ["Email", "Nom Prénom", "ID", "Téléphone", "CD/CF"]
     selected_option = st.selectbox("Choisissez un champ :", options)
 
     if selected_option == "Email":
@@ -33,5 +37,11 @@ def header_selector():
     elif selected_option == "Téléphone":
         st.warning("Recherche par Téléphone non implémentée")
         st.stop()
+    
+    elif selected_option == "CD/CF":
+        cds = sf.get_cd()
+        cd = st.selectbox("CD/CF :", options=cds)
+        if cd != " ":
+            return selected_option, {"cd": cd}
 
     return selected_option, None

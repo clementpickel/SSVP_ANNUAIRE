@@ -123,6 +123,20 @@ class AnnuaireHandler:
         emails = [row[0] for row in self.cur.fetchall()]
         return [" "] + emails
 
+    def get_cd(self):
+        self.cur.execute("SELECT DISTINCT ETABLISSEMENT FROM BENEVOLES_SAGE")
+        cds = [row[0] for row in self.cur.fetchall()]
+        return [" "] + cds
+
+    def get_persons_by_cd(self, cd: str):
+        self.cur.execute(
+            "SELECT * FROM BENEVOLES_SAGE WHERE ETABLISSEMENT = %s",
+            (cd,)
+        )
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
     def close(self):
         self.cur.close()
         self.conn.close()

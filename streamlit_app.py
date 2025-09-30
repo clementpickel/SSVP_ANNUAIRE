@@ -1,17 +1,33 @@
 import streamlit as st
 from Service.annuaire_handler import AnnuaireHandler, cleanup
-from UI.card import display_mail_card, display_phone_card, display_ids, display_name_card, display_adresse_card, display_fonctions_card
+from UI.card import display_mail_card, display_phone_card, display_ids, display_name_card, display_adresse_card, display_fonctions_card, display_cd_card
 from UI.header_selector import header_selector
 import numpy as np
 
 st.title("Annuaire SSVP")
 
-# Initialize handlera
+# Initialize handler
 sf = AnnuaireHandler()
 
+def handle_params():
+    params = st.query_params
+    if params != None and "selectedoption" in params :
+        if params["selected_option"] == "ID":
+            if id in params and params["id"] != "":
+                return "ID", {"id": params["id"][0]}
+            else:
+                return "ID", None
+    return None, None
+            
+
+
+
+header_selector_option, params = handle_params()
 header_selector_option, params = header_selector()
 
 start = False
+show_cd = False
+
 if header_selector_option == "Email" and params["email"] != " ":
     email = params["email"]
     person_ids = sf.get_id(email)
@@ -32,7 +48,13 @@ elif header_selector_option == "Nom Prénom" and params is not None and params["
     person_ids_sage = sf.get_sage_id_from_name(nom, prenom)
     start = True
 
-if start:
+elif header_selector_option == "CD/CF" and params != None and "cd" in params and params["cd"] != " ":
+    cd = params["cd"]
+    cd_info = sf.get_persons_by_cd(cd)
+    display_cd_card(cd_info)
+    start = False
+
+if start:   
     if person_ids is None:
         st.error("Aucun individu trouvé pour cet email dans PNDATA.")
         st.stop()
