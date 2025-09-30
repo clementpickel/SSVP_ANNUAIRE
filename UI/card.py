@@ -195,3 +195,32 @@ def display_fonctions_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataF
                 if row.get('DATEANNULATION',''):
                     st.text(f"  (Annulé le {get_date_string(row.get('DATEANNULATION',''))}")
                 st.markdown("---")
+
+
+def display_cd_card(cd_info: pd.DataFrame):
+    df_sorted = cd_info.sort_values(by="FONCTION")
+    df_sorted = df_sorted.replace("30/12/1899", pd.NA)
+    # df_sorted["IDENTIFIANTCONTACTPN"] = df_sorted["IDENTIFIANTCONTACTPN"].astype(int)
+    st.subheader("Informations CD/CF")
+    if df_sorted is None or cd_info.empty:
+        st.text("Aucune information trouvée.")
+    else:
+        st.dataframe(df_sorted)
+        for row in df_sorted.itertuples():
+            st.markdown(f"**{row.NOM} {row.PRENOM}**")
+            st.text(f"ID: {int(row.IDENTIFIANTCONTACTPN) if pd.notna(row.IDENTIFIANTCONTACTPN) else 'Non renseigné'}")
+            st.text(f"Fonction: {row.FONCTION}")
+            st.text(f"Date de début: {row.DATEFONCTION} --- {row.DATEFINFONCTION}")
+            st.text(f"Téléphone: {row.TELEPHONE1} --- {row.TELEPHONE2}")
+            st.text(f"Email: {row.EMAIL1} {row.EMAIL2 if row.EMAIL2 else ''}")
+            st.text(f"Adresse: {row.ADRESS1 if row.ADRESS1 else ''} {row.ADRESS2} {row.ADRESS3} {row.ADRESS4} {row.CODEPOSTAL} {row.VILLE} {row.CODEDUPAYS}")
+            if pd.notna(row.IDENTIFIANTCONTACTPN):
+                if st.button("Search by ID", key=f"search_{row.IDENTIFIANTCONTACTPN}"):
+                    st.experimental_set_query_params(selectedoption="ID", id=int(row.IDENTIFIANTCONTACTPN)) # deprecated
+                    # st.query_params.clear()
+                    # st.query_params.from_dict({
+                    #     "selectedoption": "ID",
+                    #     "id": str(int(row.IDENTIFIANTCONTACTPN))
+                    # })
+            st.markdown("---")
+            
