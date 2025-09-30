@@ -35,10 +35,6 @@ def display_telephone_card(person_info: dict):
         st.text(f"{person_info.get('NUMTEL','')}")
 
 
-
-
-
-
 def _display_emails_from_df(df: pd.DataFrame, columns: list[str]):
     """Helper to display emails from given DataFrame and list of columns."""
     if df is None or df.empty or df[columns].dropna().empty:

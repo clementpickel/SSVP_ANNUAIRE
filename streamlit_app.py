@@ -35,7 +35,7 @@ if params != None and params["email"] != " ":
 
     pn_mail = sf.get_pn_email(person_ids) if has_pn_id else None
     pn_adresse = sf.get_pn_adresse(person_ids) if has_pn_id else None
-    pn_phone = sf.get_pn_phoe(person_ids) if has_pn_id else None
+    pn_phone = sf.get_pn_phone(person_ids) if has_pn_id else None
     pn_functions = cleanup(sf.get_person_functions_pn(person_ids) if has_pn_id else None)
 
     st.markdown("---")

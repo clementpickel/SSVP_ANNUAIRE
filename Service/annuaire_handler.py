@@ -27,26 +27,34 @@ class AnnuaireHandler:
         result = self.cur.fetchone()
         return result if result else None
     
-    def get_sage_info(self, person_id: list[int]):
-        self.cur.execute("SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN = %s", (person_id,))
+    def get_sage_info(self, person_ids: tuple[int]):
+        if not person_ids:
+            return None
+        self.cur.execute("SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN = %s", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
 
-    def get_pn_email(self, person_id: list[int]):
-        self.cur.execute("SELECT ADRMAIL FROM ADRESSEEMAIL WHERE IDINDIVIDU = %s", (person_id,))
+    def get_pn_email(self, person_ids: tuple[int]):
+        if not person_ids:
+            return None
+        self.cur.execute("SELECT ADRMAIL FROM ADRESSEEMAIL WHERE IDINDIVIDU = %s", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
-    def get_pn_phoe(self, person_id: int):
-        self.cur.execute("SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU = %s", (person_id,))
+    def get_pn_phone(self, person_ids: tuple[int]):
+        if not person_ids:
+            return None
+        self.cur.execute("SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU = %s", (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
-    def get_pn_adresse(self, person_id: list[int]):
+    def get_pn_adresse(self, person_ids: tuple[int]):
+        if not person_ids:
+            return None
         self.cur.execute("""
             SELECT 
                 CIVILITE, IDCIVILITE, ACHEMINEMENT, CODEPOSTAL, COMPLEMENTADR,
@@ -54,12 +62,14 @@ class AnnuaireHandler:
                 PRENOM, CODEACTIONRECRUT, IDINDIVIDU
             FROM INDIVIDUADRESSE 
             WHERE IDINDIVIDU = %s
-        """, (person_id,))
+        """, (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
     
-    def get_person_functions_pn(self, person_id: list[int]):
+    def get_person_functions_pn(self, person_ids: tuple[int]):
+        if not person_ids:
+            return None
         query = """
         SELECT 
             rl.LIBELLE_LIEN,
@@ -72,7 +82,7 @@ class AnnuaireHandler:
         JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
         WHERE l.IDINDIVIDU = %s
         """
-        self.cur.execute(query, (person_id,))
+        self.cur.execute(query, (person_ids,))
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
