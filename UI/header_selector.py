@@ -14,16 +14,21 @@ def header_selector():
     if selected_option == "Email":
         emails = load_emails()
         email = st.selectbox("Email :", options=emails)
-        show_active = st.checkbox("Montrer seulement les fonctions actuelles")
-        return selected_option, {"email": email, "show_active": show_active}
+        return selected_option, {"email": email}
 
     elif selected_option == "ID":
-        st.warning("Recherche par ID non implémentée")
-        st.stop()
+        individuid = st.text_input("ID :")
+        if id != "":
+            return selected_option, {"id": individuid}
 
     elif selected_option == "Nom Prénom":
-        st.warning("Recherche par Nom Prénom non implémentée")
-        st.stop()
+        col1, col2 = st.columns(2)
+        with col1:
+            nom = st.text_input("Nom :")
+        with col2:
+            prenom = st.text_input("Prénom :")
+        if nom != "" and prenom != "":
+            return selected_option, {"nom": nom, "prenom": prenom}
 
     elif selected_option == "Téléphone":
         st.warning("Recherche par Téléphone non implémentée")
