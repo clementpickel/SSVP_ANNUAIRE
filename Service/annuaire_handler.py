@@ -3,8 +3,8 @@ import pandas as pd
 import os
 
 # for local testing
-import dotenv 
-dotenv.load_dotenv()
+# import dotenv 
+# dotenv.load_dotenv()
 
 class AnnuaireHandler:
     def __init__(self):
@@ -23,7 +23,7 @@ class AnnuaireHandler:
 
     def get_id(self, email: str):
         self.cur.execute(
-            "SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(%s)",
+            "SELECT IDINDIVIDU FROM ADRESSEEMAIL WHERE LOWER(ADRMAIL) = LOWER(?)",
             (email,)
         )
         result = self.cur.fetchone()
@@ -31,7 +31,7 @@ class AnnuaireHandler:
 
     def get_id_sage(self, email: str):
         self.cur.execute(
-            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(%s)",
+            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(?)",
             (email,)
         )
         result = self.cur.fetchone()
@@ -39,7 +39,7 @@ class AnnuaireHandler:
 
     def get_pn_id_from_name(self, nom: str, prenom: str):
         self.cur.execute(
-            "SELECT IDINDIVIDU FROM INDIVIDUADRESSE WHERE LOWER(NOM) = LOWER(%s) AND LOWER(PRENOM) = LOWER(%s)",
+            "SELECT IDINDIVIDU FROM INDIVIDUADRESSE WHERE LOWER(NOM) = LOWER(?) AND LOWER(PRENOM) = LOWER(?)",
             (nom, prenom)
         )
         result = self.cur.fetchone()
@@ -47,7 +47,7 @@ class AnnuaireHandler:
 
     def get_sage_id_from_name(self, nom: str, prenom: str):
         self.cur.execute(
-            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(NOM) = LOWER(%s) AND LOWER(PRENOM) = LOWER(%s)",
+            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(NOM) = LOWER(?) AND LOWER(PRENOM) = LOWER(?)",
             (nom, prenom)
         )
         result = self.cur.fetchone()
