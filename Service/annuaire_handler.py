@@ -101,22 +101,80 @@ class AnnuaireHandler:
         if not person_ids:
             return None
         query = f"""
-        SELECT 
-            rl.LIBELLE_LIEN,
-            rt.LIB_TYPELIEN,
-            l.DATE_TEMP_DEBUT,
-            l.DATE_TEMP_FIN,
-            l.DATEANNULATION
-        FROM LIEN l
-        JOIN REF_LIEN rl ON rl.IDREF_LIEN = l.IDREF_LIEN
-        JOIN REF_TYPELIEN rt ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
-        WHERE l.IDINDIVIDU IN {self.tuple_to_str(person_ids)}
+            SELECT 
+                rl.LIBELLE_LIEN,
+                rt.LIB_TYPELIEN,
+                er.LIBELLEENTITE,
+                l.DATE_TEMP_DEBUT,
+                l.DATE_TEMP_FIN,
+                l.DATEANNULATION
+            FROM LIEN l
+            JOIN REF_LIEN rl 
+                ON rl.IDREF_LIEN = l.IDREF_LIEN
+            JOIN REF_TYPELIEN rt 
+                ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
+            JOIN ENTITE_RESEAU er 
+                ON er.IDINDIVIDU = l.IDINDIVIDULIE
+            WHERE l.IDINDIVIDU IN {self.tuple_to_str(person_ids)}
         """
         self.cur.execute(query)
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
+    def get_entites_by_type_and_dept(self, type: str, dept: str):
+        # id_pattern = f"{type}__{dept}"
+
+        # IDENTITE must start with type
+        identite_pattern = f"{type}%"
+        # IDASSOCIATION must end with dept
+        idasso_pattern = f"%{dept}"
+        
+        query = """
+        SELECT IDENTITE, LIBELLEENTITE, IDASSOCIATION, IDINDIVIDU
+        FROM ENTITE_RESEAU
+        WHERE IDENTITE LIKE %s
+        AND IDASSOCIATION LIKE %s
+
+        """
+        self.cur.execute(query, (identite_pattern, idasso_pattern))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+    def get_people_from_entite(self, entite_id: str):
+        query = """
+            SELECT DISTINCT
+                l.IDINDIVIDU,
+                l.IDREF_LIEN,
+                l.DATE_TEMP_DEBUT,
+                l.DATE_TEMP_FIN,
+                l.DATEANNULATION,
+                ia.CIVILITE,
+                ia.NOM,
+                ia.PRENOM,
+                rl.LIBELLE_LIEN,
+                rt.LIB_TYPELIEN,
+                ae.ADRMAIL,
+                t.INDICATIFTEL,
+                t.NUMTEL,
+            FROM LIEN l
+            JOIN REF_LIEN rl 
+                ON rl.IDREF_LIEN = l.IDREF_LIEN
+            JOIN REF_TYPELIEN rt 
+                    ON rt.IDREF_TYPELIEN = rl.IDREF_TYPELIEN
+            JOIN INDIVIDUADRESSE ia
+                ON ia.IDINDIVIDU = l.IDINDIVIDU
+            JOIN ADRESSEEMAIL ae
+                ON ae.IDINDIVIDU = l.IDINDIVIDU
+            JOIN TELEPHONE t
+                ON t.IDINDIVIDU = l.IDINDIVIDU
+            WHERE l.IDINDIVIDULIE = %s;
+        """
+        self.cur.execute(query, (entite_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
 
     def get_emails(self):
         self.cur.execute("SELECT DISTINCT ADRMAIL FROM ADRESSEEMAIL")

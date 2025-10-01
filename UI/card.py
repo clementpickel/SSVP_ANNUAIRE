@@ -191,6 +191,7 @@ def display_fonctions_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataF
         else:
             for _, row in pndata_info.iterrows():
                 st.text(f"{row.get('LIBELLE_LIEN','')} - {row.get('LIB_TYPELIEN','')}")
+                st.text(f"{row.get('LIBELLEENTITE','')}")
                 st.text(f"{get_date_string(row.get('DATE_TEMP_DEBUT',''))} - {get_date_string(row.get('DATE_TEMP_FIN',''))}")
                 if row.get('DATEANNULATION',''):
                     st.text(f"  (Annulé le {get_date_string(row.get('DATEANNULATION',''))}")
@@ -223,4 +224,41 @@ def display_cd_card(cd_info: pd.DataFrame):
                         "id": str(int(row.IDENTIFIANTCONTACTPN))
                     })
             st.markdown("---")
-            
+
+def display_fonctions_card_entite(info_df: pd.DataFrame):
+    info_df["IDREF_LIEN"] = info_df["IDREF_LIEN"].astype(int)
+    info_df["DATEANNULATION"] = info_df["DATEANNULATION"].replace("00000000000000000", pd.NA)
+    info_df["DATEANNULATION"] = pd.to_datetime(
+        info_df["DATEANNULATION"].str.slice(0, 8),
+        format="%Y%m%d",
+        errors="coerce"
+    )
+    info_df = info_df.dropna(subset=["NOM", "PRENOM"])
+
+    # Merge emails and tel
+    info_df = (
+        info_df.groupby(
+            ["NOM", "PRENOM", "LIBELLE_LIEN", "LIB_TYPELIEN", "IDREF_LIEN", "DATEANNULATION"],
+            dropna=False
+        )
+        .agg({
+            "ADRMAIL": lambda x: ", ".join(sorted(set(x.dropna()))),
+            "INDICATIFTEL": lambda x: ", ".join(sorted(set(x.dropna().astype(str)))),
+            "NUMTEL": lambda x: ", ".join(sorted(set(x.dropna().astype(str))))
+        })
+        .reset_index()
+    )
+    info_df = info_df.sort_values(by="IDREF_LIEN")
+
+    show_active = st.checkbox("Afficher uniquement les fonctions actives", value=True)
+    if show_active:
+        info_df = info_df[(info_df["DATEANNULATION"].isna()) | (info_df["DATEANNULATION"] >= pd.Timestamp.today())]
+
+    st.dataframe(info_df, use_container_width=True)
+    for i, row in info_df.iterrows():
+        st.write(f"**{row['LIBELLE_LIEN']}** - {row['PRENOM']} - {row['NOM']} - {row['LIB_TYPELIEN']}")
+        
+        if st.button("Plus d'informations)", key=f"btn_{i}"):
+            st.write(f"Number: {row['NUMTEL']}")
+            st.write(f"Email: {row['ADRMAIL']}")
+                
