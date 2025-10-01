@@ -1,10 +1,14 @@
 import streamlit as st
 from Service.annuaire_handler import AnnuaireHandler, cleanup
-from UI.card import display_mail_card, display_phone_card, display_ids, display_name_card, display_adresse_card, display_fonctions_card, display_cd_card
+from UI.card import display_mail_card, display_phone_card, display_ids, display_name_card, display_adresse_card, display_fonctions_card, display_cd_card, display_fonctions_card_entite
 from UI.header_selector import header_selector
 import numpy as np
 
-st.title("Annuaire SSVP")
+st.set_page_config(layout="wide")
+with st.container():
+    _, main, _ = st.columns([1,2,1])
+    with main:
+        st.title("Annuaire SSVP")
 
 # Initialize handler
 sf = AnnuaireHandler()
@@ -52,6 +56,12 @@ elif header_selector_option == "CD/CF" and params != None and "cd" in params and
     cd = params["cd"]
     cd_info = sf.get_persons_by_cd(cd)
     display_cd_card(cd_info)
+    start = False
+
+elif header_selector_option == "CD/CF bis" and params != None and "entite_id" in params:
+    entiteid = params["entite_id"]
+    info_df = sf.get_people_from_entite(entiteid)
+    display_fonctions_card_entite(info_df)
     start = False
 
 if start:   
