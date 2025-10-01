@@ -133,8 +133,8 @@ class AnnuaireHandler:
         query = """
         SELECT IDENTITE, LIBELLEENTITE, IDASSOCIATION, IDINDIVIDU
         FROM ENTITE_RESEAU
-        WHERE IDENTITE LIKE %s
-        AND IDASSOCIATION LIKE %s
+        WHERE IDENTITE LIKE ?
+        AND IDASSOCIATION LIKE ?
 
         """
         self.cur.execute(query, (identite_pattern, idasso_pattern))
@@ -169,7 +169,7 @@ class AnnuaireHandler:
                 ON ae.IDINDIVIDU = l.IDINDIVIDU
             JOIN TELEPHONE t
                 ON t.IDINDIVIDU = l.IDINDIVIDU
-            WHERE l.IDINDIVIDULIE = %s;
+            WHERE l.IDINDIVIDULIE = ?;
         """
         self.cur.execute(query, (entite_id,))
         data = self.cur.fetchall()
