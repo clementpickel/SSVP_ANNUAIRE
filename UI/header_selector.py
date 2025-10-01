@@ -64,10 +64,7 @@ def header_selector():
                     else:
                         entite_option = list(zip(dept_options['IDENTITE'] + ' - ' + dept_options['LIBELLEENTITE'], dept_options['IDINDIVIDU']))
                         entite = st.selectbox("Plusieurs entités trouvées, veuillez en sélectionner une:", entite_option, format_func=lambda x: x[0])
-                        label, value = entite
-                        st.write("Selected label:", label)
-                        st.write("Selected value:", value)
-                        # st.dataframe(dept_options)
+                        _, value = entite
                         return selected_option, {"entite_id": value}
 
             return selected_option, None
