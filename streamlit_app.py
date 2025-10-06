@@ -61,7 +61,8 @@ elif header_selector_option == "CD/CF" and params != None and "cd" in params and
 elif header_selector_option == "CD/CF bis" and params != None and "entite_id" in params:
     entiteid = params["entite_id"]
     info_df = sf.get_people_from_entite(entiteid)
-    display_fonctions_card_entite(info_df)
+    entite_df = sf.get_entite_info(entiteid)
+    display_fonctions_card_entite(info_df, entite_df)
     start = False
 
 if start:   

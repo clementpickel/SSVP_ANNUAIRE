@@ -176,6 +176,49 @@ class AnnuaireHandler:
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
+    def get_entite_info(self, entite_id: str):
+        query = """
+            SELECT
+                er.*,
+                ae.ADRMAIL,
+                t.INDICATIFTEL,
+                t.NUMTEL,
+                ia.COMPLEMENTADR,
+                ia.COMPLEMENTNUMVOIE,
+                ia.CODEPOSTAL as IACODEPOSTAL,
+                ia.NUMVOIE,
+                ia.LIBVOIE,
+                ia.LIEUDITPOSTALOUBP,
+                ia.IDCIVILITE,
+                ia.NOM,
+                ia.PRENOM,
+                ia.RAISONSOCIALE,
+                ia.SIRET,
+                ia.IDDEPARTEMENT,
+                ia.IDTYPEINDIVIDU,
+
+                rti.LIBTYPEINDIVIDU,
+                iva.LIBVALIDITEADRESSE
+
+            FROM ENTITE_RESEAU er
+            JOIN ADRESSEEMAIL ae
+                ON ae.IDINDIVIDU = er.IDINDIVIDU
+            JOIN TELEPHONE t
+                ON t.IDINDIVIDU = er.IDINDIVIDU
+            JOIN INDIVIDUADRESSE ia
+                ON ia.IDINDIVIDU = er.IDINDIVIDU
+            JOIN REFTYPEINDIVIDU rti
+                ON rti.IDTYPEINDIVIDU = ia.IDTYPEINDIVIDU
+            JOIN REFVALIDITEADRESSE iva
+                ON iva.IDVALIDITEADRESSE = ia.IDVALIDITEADRESSE
+
+            WHERE er.IDINDIVIDU = %s;
+        """
+        self.cur.execute(query, (entite_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
     def get_emails(self):
         self.cur.execute("SELECT DISTINCT ADRMAIL FROM ADRESSEEMAIL")
         emails = [row[0] for row in self.cur.fetchall()]

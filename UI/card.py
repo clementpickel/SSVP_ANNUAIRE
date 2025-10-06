@@ -225,7 +225,10 @@ def display_cd_card(cd_info: pd.DataFrame):
                     # })
             st.markdown("---")
 
-def display_fonctions_card_entite(info_df: pd.DataFrame):
+def merge_unique(series):
+    return ", ".join(sorted(set(series.dropna().astype(str))))
+
+def display_fonctions_card_entite(info_df: pd.DataFrame, entite_df: pd.DataFrame):
     info_df["IDREF_LIEN"] = info_df["IDREF_LIEN"].astype(int)
     info_df["DATEANNULATION"] = info_df["DATEANNULATION"].replace("00000000000000000", pd.NA)
     info_df["DATEANNULATION"] = pd.to_datetime(
@@ -248,17 +251,53 @@ def display_fonctions_card_entite(info_df: pd.DataFrame):
         })
         .reset_index()
     )
-    info_df = info_df.sort_values(by="IDREF_LIEN")
+    info_df = info_df.sort_values(by="IDREF_LIEN").reset_index()
 
-    show_active = st.checkbox("Afficher uniquement les fonctions actives", value=True)
-    if show_active:
-        info_df = info_df[(info_df["DATEANNULATION"].isna()) | (info_df["DATEANNULATION"] >= pd.Timestamp.today())]
+    entite_df = (
+        entite_df.groupby("IDINDIVIDU", dropna=False)
+        .agg({col: merge_unique for col in entite_df.columns if col != "IDINDIVIDU"})
+        .reset_index()
+    )
+    # st.dataframe(entite_df, use_container_width=True)
 
-    st.dataframe(info_df, use_container_width=True)
-    for i, row in info_df.iterrows():
-        st.write(f"**{row['LIBELLE_LIEN']}** - {row['PRENOM']} - {row['NOM']} - {row['LIB_TYPELIEN']}")
-        
-        if st.button("Plus d'informations)", key=f"btn_{i}"):
-            st.write(f"Number: {row['NUMTEL']}")
-            st.write(f"Email: {row['ADRMAIL']}")
+    if not entite_df.empty:
+        if entite_df['IDENTITE'].iloc[0] != entite_df['IDASSOCIATION'].iloc[0]:
+            st.header(
+                f"**{entite_df['LIBELLEENTITE'].iloc[0]}** - "
+                f"{entite_df['IDENTITE'].iloc[0]} - "
+                f"{entite_df['IDASSOCIATION'].iloc[0]}"
+            )
+        else:
+            st.header(
+                f"**{entite_df['LIBELLEENTITE'].iloc[0]}** - "
+                f"{entite_df['IDENTITE'].iloc[0]}"
+            )
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Adresse")
+            st.text(entite_df['NUMVOIE'].iloc[0] + " " + entite_df['LIBVOIE'].iloc[0] + ", " + entite_df['IACODEPOSTAL'].iloc[0])
+        with col2:
+            st.subheader("Contact")
+            st.text(entite_df['NUMTEL'].iloc[0])
+            st.text(entite_df['ADRMAIL'].iloc[0])
+    else:
+        st.warning("Pas de données sur l'entité")
+
+    if info_df.empty:
+        st.warning("Pas de bénévoles trouvés")
+    else:
+        show_active = st.checkbox("Afficher uniquement les fonctions actives", value=True)
+        if show_active:
+            info_df = info_df[(info_df["DATEANNULATION"].isna()) | (info_df["DATEANNULATION"] >= pd.Timestamp.today())]
+
+        cols = st.columns(3) 
+        for i, row in info_df.iterrows():
+            col = cols[i % 3]
+
+            with col:
+                st.markdown(f"**{row['LIBELLE_LIEN']}**<br>{row['PRENOM']} {row['NOM']}<br>{row['LIB_TYPELIEN']}", unsafe_allow_html=True)
+
+                if st.button("Plus d'informations", key=f"btn_{i}"):
+                    st.write(f"📞 {row['NUMTEL']}")
+                    st.write(f"📧 {row['ADRMAIL']}")
                 
