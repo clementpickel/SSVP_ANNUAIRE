@@ -30,9 +30,13 @@ class AnnuaireHandler:
         return result if result else None
 
     def get_id_sage(self, email: str):
-        self.cur.execute(
-            "SELECT IDENTIFIANTCONTACTPN FROM BENEVOLES_SAGE WHERE LOWER(EMAIL1) = LOWER(?)",
-            (email,)
+        self.cur.execute("""
+            SELECT IDENTIFIANTCONTACTPN
+            FROM BENEVOLES_SAGE
+            WHERE LOWER(EMAIL1) = LOWER(?)
+            OR LOWER(EMAIL2) = LOWER(?)
+        """,
+            (email, email)
         )
         result = self.cur.fetchone()
         return result if result else None
@@ -56,12 +60,52 @@ class AnnuaireHandler:
     def get_sage_info(self, person_ids: tuple[int]):
         if not person_ids:
             return None
-        query = f"SELECT * FROM BENEVOLES_SAGE WHERE IDENTIFIANTCONTACTPN IN {self.tuple_to_str(person_ids)}"
+        query = f"""
+            SELECT
+                bs.*,
+                er1.LIBELLEENTITE AS LIBELLEENTITE,
+                er2.LIBELLEENTITE AS LIBELLEENTITE2,
+                er3.LIBELLEENTITE AS LIBELLEENTITE3,
+                er4.LIBELLEENTITE AS LIBELLEENTITE4,
+                er5.LIBELLEENTITE AS LIBELLEENTITE5,
+
+                rl1.LIBELLE_LIEN AS LIBELLE_LIEN,
+                rl2.LIBELLE_LIEN AS LIBELLE_LIEN2,
+                rl3.LIBELLE_LIEN AS LIBELLE_LIEN3,
+                rl4.LIBELLE_LIEN AS LIBELLE_LIEN4,
+                rl5.LIBELLE_LIEN AS LIBELLE_LIEN5,
+
+                rt1.LIB_TYPELIEN as LIB_TYPELIEN,
+                rt2.LIB_TYPELIEN as LIB_TYPELIEN2,
+                rt3.LIB_TYPELIEN as LIB_TYPELIEN3,
+                rt4.LIB_TYPELIEN as LIB_TYPELIEN4,
+                rt5.LIB_TYPELIEN as LIB_TYPELIEN5
+
+
+            FROM BENEVOLES_SAGE AS bs
+            LEFT JOIN ENTITE_RESEAU AS er1 ON er1.IDINDIVIDU = bs.IDCONTACTENTITE
+            LEFT JOIN ENTITE_RESEAU AS er2 ON er2.IDINDIVIDU = bs.IDCONTACTENTITE2
+            LEFT JOIN ENTITE_RESEAU AS er3 ON er3.IDINDIVIDU = bs.IDCONTACTENTITE3
+            LEFT JOIN ENTITE_RESEAU AS er4 ON er4.IDINDIVIDU = bs.IDCONTACTENTITE4
+            LEFT JOIN ENTITE_RESEAU AS er5 ON er5.IDINDIVIDU = bs.IDCONTACTENTITE5
+
+            LEFT JOIN REF_LIEN AS rl1 ON rl1.IDREF_LIEN = bs.FONCTION
+            LEFT JOIN REF_LIEN AS rl2 ON rl2.IDREF_LIEN = bs.FONCTION2
+            LEFT JOIN REF_LIEN AS rl3 ON rl3.IDREF_LIEN = bs.FONCTION3
+            LEFT JOIN REF_LIEN AS rl4 ON rl4.IDREF_LIEN = bs.FONCTION4
+            LEFT JOIN REF_LIEN AS rl5 ON rl5.IDREF_LIEN = bs.FONCTION5
+
+            LEFT JOIN REF_TYPELIEN AS rt1 ON rt1.IDREF_TYPELIEN = bs.ENTITEAPPARTENANCE
+            LEFT JOIN REF_TYPELIEN AS rt2 ON rt2.IDREF_TYPELIEN = bs.ENTITEAPPARTENANCE2
+            LEFT JOIN REF_TYPELIEN AS rt3 ON rt3.IDREF_TYPELIEN = bs.ENTITEAPPARTENANCE3
+            LEFT JOIN REF_TYPELIEN AS rt4 ON rt4.IDREF_TYPELIEN = bs.ENTITEAPPARTENANCE4
+            LEFT JOIN REF_TYPELIEN AS rt5 ON rt5.IDREF_TYPELIEN = bs.ENTITEAPPARTENANCE5
+
+            WHERE bs.IDENTIFIANTCONTACTPN IN {self.tuple_to_str(person_ids)};"""
         self.cur.execute(query)
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
-
 
     def get_pn_email(self, person_ids: tuple[int]):
         if not person_ids:
@@ -75,11 +119,17 @@ class AnnuaireHandler:
     def get_pn_phone(self, person_ids: tuple[int]):
         if not person_ids:
             return None
-        query = f"SELECT INDICATIFTEL, NUMTEL FROM TELEPHONE WHERE IDINDIVIDU IN {self.tuple_to_str(person_ids)}"
+        query = f"SELECT INDICATIFTEL, NUMTEL, DATEANNULATION FROM TELEPHONE WHERE IDINDIVIDU IN {self.tuple_to_str(person_ids)}"
         self.cur.execute(query)
         data = self.cur.fetchall()
         cols = [desc[0] for desc in self.cur.description]
-        return pd.DataFrame(data, columns=cols)
+        df = pd.DataFrame(data, columns=cols)
+        df["DATEANNULATION"] = pd.to_datetime(df["DATEANNULATION"].astype(str), format="%Y%m%d%H%M%S%f", errors="coerce")
+        today = pd.Timestamp.now().normalize()
+        print(df)
+        df = df[(df["DATEANNULATION"].isna()) | (df["DATEANNULATION"] >= today)]
+        print(df)
+        return df
 
     def get_pn_adresse(self, person_ids: tuple[int]):
         if not person_ids:
@@ -176,6 +226,92 @@ class AnnuaireHandler:
         cols = [desc[0] for desc in self.cur.description]
         return pd.DataFrame(data, columns=cols)
 
+    def get_entite_info(self, entite_id: str):
+        query = """
+            SELECT
+                er.*,
+                ae.ADRMAIL,
+                t.INDICATIFTEL,
+                t.NUMTEL,
+                ia.COMPLEMENTADR,
+                ia.COMPLEMENTNUMVOIE,
+                ia.CODEPOSTAL as IACODEPOSTAL,
+                ia.NUMVOIE,
+                ia.LIBVOIE,
+                ia.LIEUDITPOSTALOUBP,
+                ia.IDCIVILITE,
+                ia.NOM,
+                ia.PRENOM,
+                ia.RAISONSOCIALE,
+                ia.SIRET,
+                ia.IDDEPARTEMENT,
+                ia.IDTYPEINDIVIDU,
+
+                rti.LIBTYPEINDIVIDU,
+                iva.LIBVALIDITEADRESSE
+
+            FROM ENTITE_RESEAU er
+            JOIN ADRESSEEMAIL ae
+                ON ae.IDINDIVIDU = er.IDINDIVIDU
+            JOIN TELEPHONE t
+                ON t.IDINDIVIDU = er.IDINDIVIDU
+            JOIN INDIVIDUADRESSE ia
+                ON ia.IDINDIVIDU = er.IDINDIVIDU
+            JOIN REFTYPEINDIVIDU rti
+                ON rti.IDTYPEINDIVIDU = ia.IDTYPEINDIVIDU
+            JOIN REFVALIDITEADRESSE iva
+                ON iva.IDVALIDITEADRESSE = ia.IDVALIDITEADRESSE
+
+            WHERE er.IDINDIVIDU = %s;
+        """
+        self.cur.execute(query, (entite_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
+    def get_entite_info(self, entite_id: str):
+        query = """
+            SELECT
+                er.*,
+                ae.ADRMAIL,
+                t.INDICATIFTEL,
+                t.NUMTEL,
+                ia.COMPLEMENTADR,
+                ia.COMPLEMENTNUMVOIE,
+                ia.CODEPOSTAL as IACODEPOSTAL,
+                ia.NUMVOIE,
+                ia.LIBVOIE,
+                ia.LIEUDITPOSTALOUBP,
+                ia.IDCIVILITE,
+                ia.NOM,
+                ia.PRENOM,
+                ia.RAISONSOCIALE,
+                ia.SIRET,
+                ia.IDDEPARTEMENT,
+                ia.IDTYPEINDIVIDU,
+
+                rti.LIBTYPEINDIVIDU,
+                iva.LIBVALIDITEADRESSE
+
+            FROM ENTITE_RESEAU er
+            JOIN ADRESSEEMAIL ae
+                ON ae.IDINDIVIDU = er.IDINDIVIDU
+            JOIN TELEPHONE t
+                ON t.IDINDIVIDU = er.IDINDIVIDU
+            JOIN INDIVIDUADRESSE ia
+                ON ia.IDINDIVIDU = er.IDINDIVIDU
+            JOIN REFTYPEINDIVIDU rti
+                ON rti.IDTYPEINDIVIDU = ia.IDTYPEINDIVIDU
+            JOIN REFVALIDITEADRESSE iva
+                ON iva.IDVALIDITEADRESSE = ia.IDVALIDITEADRESSE
+
+            WHERE er.IDINDIVIDU = ?;
+        """
+        self.cur.execute(query, (entite_id,))
+        data = self.cur.fetchall()
+        cols = [desc[0] for desc in self.cur.description]
+        return pd.DataFrame(data, columns=cols)
+
     def get_emails(self):
         self.cur.execute("SELECT DISTINCT ADRMAIL FROM ADRESSEEMAIL")
         emails = [row[0] for row in self.cur.fetchall()]
@@ -198,6 +334,27 @@ class AnnuaireHandler:
     def close(self):
         self.cur.close()
         self.conn.close()
+    
+    def get_all_id_for_name(self, nom: str, prenom: str):
+        if not nom or not prenom:
+            return []
+        query = """
+            SELECT DISTINCT IDINDIVIDU
+            FROM INDIVIDUADRESSE
+            WHERE LOWER(NOM) = LOWER(%s)
+            AND LOWER(PRENOM) = LOWER(%s)
+
+            UNION
+
+            SELECT DISTINCT IDENTIFIANTCONTACTPN
+            FROM BENEVOLES_SAGE
+            WHERE LOWER(NOM) = LOWER(%s)
+            AND LOWER(PRENOM) = LOWER(%s)
+        """
+        print("azerty", nom, prenom)
+        self.cur.execute(query, (nom, prenom, nom, prenom))
+        results = self.cur.fetchall()
+        return [int(row[0]) for row in results] if results else []
 
 
 def convert_date(df: pd.DataFrame, col_name: str, format="%Y%m%d") -> pd.DataFrame:

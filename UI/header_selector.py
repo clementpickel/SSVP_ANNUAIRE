@@ -33,8 +33,17 @@ def header_selector():
                     nom = st.text_input("Nom :")
                 with col2:
                     prenom = st.text_input("Prénom :")
-                if nom != "" and prenom != "":
-                    return selected_option, {"nom": nom, "prenom": prenom}
+                if nom != None and prenom != None and nom != "" and prenom != "":
+                    ids = sf.get_all_id_for_name(nom, prenom)
+                    if len(ids) == 0:
+                        st.warning("Personne n'a été trouvé")
+                        return selected_option, None
+                    elif len(ids) == 1:
+                        return "ID", {"id": ids[0]}
+                    else:
+                        selected_id = st.selectbox("Plusieurs personnes trouvées, veuillez en sélectionner une: :", options=ids)
+                        return "ID", {"id": selected_id}
+                    # return selected_option, {"nom": nom, "prenom": prenom}
 
             elif selected_option == "Téléphone":
                 st.warning("Recherche par Téléphone non implémentée")
