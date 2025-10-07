@@ -75,8 +75,6 @@ if start:
         st.stop()
 
     sage_info = sf.get_sage_info(person_ids_sage) if person_ids_sage else None
-    if sage_info is not None:
-        sage_info = sage_info.replace("30/12/1899", np.nan)
 
     pn_mail = sf.get_pn_email(person_ids) if person_ids else None
     pn_adresse = sf.get_pn_adresse(person_ids) if person_ids else None

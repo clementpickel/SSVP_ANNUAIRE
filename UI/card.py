@@ -1,6 +1,45 @@
 import streamlit as st
 import pandas as pd
 
+def display_equal(bool: bool):
+    if bool:
+        st.markdown(
+            """
+            <div style="
+                text-align:center;
+                background-color:#d4edda;
+                color:green;
+                font-size:2rem;
+                border-radius:8px;
+                padding:4px 0;
+                width:40px;
+                margin:auto;
+            ">
+                =
+            </div>
+            """,
+            unsafe_allow_html=True
+        )        
+    else:
+        st.markdown(
+            """
+            <div style="
+                text-align:center;
+                background-color:#f8d7da;
+                color:#a94442;
+                font-size:2rem;
+                border-radius:8px;
+                padding:4px 0;
+                width:40px;
+                margin:auto;
+            ">
+                ≠
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
 def display_adresse_card(person_info: dict):
     # Header with full name
     st.header(f"{person_info.get('IDCIVILITE','')} {person_info.get('PRENOM','')} {person_info.get('NOM','')}")
@@ -36,7 +75,6 @@ def display_telephone_card(person_info: dict):
 
 
 def _display_emails_from_df(df: pd.DataFrame, columns: list[str]):
-    """Helper to display emails from given DataFrame and list of columns."""
     if df is None or df.empty or df[columns].dropna().empty:
         st.text("Aucun information trouvée.")
         return False
@@ -51,12 +89,29 @@ def _display_emails_from_df(df: pd.DataFrame, columns: list[str]):
 def display_mail_card(person_info_sage: pd.DataFrame | None, person_info_pndata: pd.DataFrame | None):
     st.subheader("Email")
 
-    col1, col2 = st.columns(2)
+    col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### Emails Sage")
         _display_emails_from_df(person_info_sage, ["EMAIL1", "EMAIL2"])
 
+    with col_mid:
+        if person_info_sage is not None and person_info_pndata is not None:
+            sage_df = person_info_sage[["EMAIL1", "EMAIL2"]].apply(lambda x: ', '.join(x.dropna()), axis=1).to_frame(name="ADRMAIL")
+            sage_series = sage_df["ADRMAIL"].reset_index(drop=True)
+            pn_series = person_info_pndata["ADRMAIL"].reset_index(drop=True)
+            sage_series = sage_series.astype(str).str.strip().str.lower()
+            pn_series   = pn_series.astype(str).str.strip().str.lower()
+
+            if len(sage_series) != len(pn_series):
+                comparison = False
+            else:
+                comparison = sage_series == pn_series
+                comparison = comparison.all()
+            display_equal(comparison)
+        else:
+            display_equal(False)
+ 
     with col2:
         st.markdown("##### Emails PNData")
 
@@ -67,20 +122,44 @@ def display_mail_card(person_info_sage: pd.DataFrame | None, person_info_pndata:
 def display_phone_card(person_info_sage: pd.DataFrame | None, person_info_pndata: pd.DataFrame | None):
     st.subheader("Téléphone")
 
-    col1, col2 = st.columns(2)
+    col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### Téléphone Sage")
-        _display_emails_from_df(person_info_sage, ["TELEPHONE1", "TELEPHONE2"])
+        if person_info_sage is not None:
+            for _, row in person_info_sage[["TELEPHONE1", "TELEPHONE2"]].iterrows():
+                if row['TELEPHONE1']:
+                    st.text(f"{row['TELEPHONE1']}")
+                if row['TELEPHONE2']:
+                    st.text(f"{row['TELEPHONE2'] }")
+
+    with col_mid:
+        if person_info_pndata is not None and person_info_sage is not None:
+            sage_phones = pd.concat(
+                [person_info_sage["TELEPHONE1"], person_info_sage["TELEPHONE2"]],
+                ignore_index=True
+            ).dropna().astype(str).str.strip()
+            pn_phones = (
+                person_info_pndata["INDICATIFTEL"].fillna('').astype(str).str.strip() +
+                person_info_pndata["NUMTEL"].fillna('').astype(str).str.strip()
+            ).dropna()
+            set_sage = set(sage_phones)
+            set_pn = set(pn_phones)
+            comparaison = (set_sage == set_pn)
+            display_equal(comparaison)
+        else:
+            display_equal(False)
 
     with col2:
         st.markdown("##### Téléphone PNData")
-        _display_emails_from_df(person_info_pndata, ["INDICATIFTEL", "NUMTEL"])
+        if person_info_pndata is not None:
+            for _, row in person_info_pndata[["INDICATIFTEL", "NUMTEL"]].iterrows():
+                st.text(f"{row['INDICATIFTEL'] if row['INDICATIFTEL'] else ''}  {row['NUMTEL']}")
 
 def display_ids(sage_id: list[str], pndata_id: list[str]):
     st.subheader("ID")
 
-    col1, col2 = st.columns(2)
+    col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### ID Sage")
@@ -89,6 +168,12 @@ def display_ids(sage_id: list[str], pndata_id: list[str]):
         else:
             for id in sage_id:
                 st.text(id)
+    
+    with col_mid:
+        if sage_id and pndata_id:
+            display_equal(int(sage_id[0]) == int(pndata_id[0]))
+        else:
+            display_equal(False)
 
     with col2:
         st.markdown("##### ID PNData")
@@ -101,7 +186,7 @@ def display_ids(sage_id: list[str], pndata_id: list[str]):
 def display_name_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFrame | None):
     st.subheader("Nom Prénom")
 
-    col1, col2 = st.columns(2)
+    col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### Nom Prénom Sage")
@@ -118,11 +203,21 @@ def display_name_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFrame 
         else:
             for _, row in pndata_info.iterrows():
                 st.text(f"{row.get('PRENOM','')} {row.get('NOM','')}")
+    
+    with col_mid:
+        if sage_info is not None and pndata_info is not None and len(sage_info) == len(pndata_info):
+            matches = (sage_info["PRENOM"] == pndata_info["PRENOM"]) & \
+            (sage_info["NOM"] == pndata_info["NOM"])
+            display_equal(matches.all())
+        else:
+            display_equal(False)
+
+
 
 def display_adresse_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFrame | None):
     st.subheader("Adresse")
 
-    col1, col2 = st.columns(2)
+    col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### Adresse Sage")
@@ -130,19 +225,23 @@ def display_adresse_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFra
             st.text("Aucune adresse trouvée.")
         else:
             for _, row in sage_info.iterrows():
-                if row.get("ADRESS1"):
-                    st.text(row["ADRESS1"])
-                if row.get("ADRESS2"):
-                    st.text(row["ADRESS2"])
-                if row.get("ADRESS3"):
-                    st.text(row["ADRESS3"])
-                if row.get("ADRESS4"):
-                    st.text(row["ADRESS4"])
+                for i in range(1, 5):
+                    if row.get(f"ADRESS{i}"):
+                        st.text(row[f"ADRESS{i}"])
 
                 st.text(f"Code postale: {row.get('CODEPOSTAL','')}")
                 st.text(f"Ville: {row.get('VILLE','')}")
                 st.text(f"Pays: {row.get('CODEDUPAYS','')}")
 
+    with col_mid:
+        if sage_info is not None and pndata_info is not None and len(sage_info) == len(pndata_info):
+            pn_adresse = pndata_info["NUMVOIE"].fillna("") + " " + pndata_info["LIBVOIE"].fillna("")
+            res = pn_adresse == sage_info["ADRESS3"]
+            res_codepostal = sage_info['CODEPOSTAL'] == pndata_info['CODEPOSTAL']
+            display_equal(res.all() and res_codepostal.all())
+            st.warning("Compare seulement l'adresse et le code postal")
+        else:
+            display_equal(False)
     with col2:
         st.markdown("##### Adresse PNData")
         if pndata_info is None or pndata_info.empty:
@@ -170,7 +269,7 @@ def get_date_string(date: pd.Timestamp) -> str:
 def display_fonctions_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFrame | None):
     st.subheader("Fonctions")
 
-    col1, col2 = st.columns(2)
+    col1, _, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### Fonctions Sage")
@@ -180,7 +279,8 @@ def display_fonctions_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataF
             for _, row in sage_info.iterrows():
                 for i in ["", "2", "3", "4", "5"]:
                     if row.get(f'FONCTION{i}',''):
-                        st.text(f"{row.get(f'FONCTION{i}','')} - {row.get(f'ENTITEAPPARTENANCE{i}','')}")
+                        st.text(f"{row.get(f'LIBELLE_LIEN{i}','')} - {row.get(f'LIB_TYPELIEN{i}','')}")
+                        st.text(f"{row.get(f'LIBELLEENTITE{i}','')}")
                         st.text(f"{get_date_string(row.get(f'DATEFONCTION{i}',''))} - {get_date_string(row.get(f'DATEFINFONCTION{i}',''))}")
                         st.markdown("---")
 
