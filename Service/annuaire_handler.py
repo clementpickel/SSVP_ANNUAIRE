@@ -262,7 +262,7 @@ class AnnuaireHandler:
             JOIN REFVALIDITEADRESSE iva
                 ON iva.IDVALIDITEADRESSE = ia.IDVALIDITEADRESSE
 
-            WHERE er.IDINDIVIDU = %s;
+            WHERE er.IDINDIVIDU = ?;
         """
         self.cur.execute(query, (entite_id,))
         data = self.cur.fetchall()
@@ -341,15 +341,15 @@ class AnnuaireHandler:
         query = """
             SELECT DISTINCT IDINDIVIDU
             FROM INDIVIDUADRESSE
-            WHERE LOWER(NOM) = LOWER(%s)
-            AND LOWER(PRENOM) = LOWER(%s)
+            WHERE LOWER(NOM) = LOWER(?)
+            AND LOWER(PRENOM) = LOWER(?)
 
             UNION
 
             SELECT DISTINCT IDENTIFIANTCONTACTPN
             FROM BENEVOLES_SAGE
-            WHERE LOWER(NOM) = LOWER(%s)
-            AND LOWER(PRENOM) = LOWER(%s)
+            WHERE LOWER(NOM) = LOWER(?)
+            AND LOWER(PRENOM) = LOWER(?)
         """
         print("azerty", nom, prenom)
         self.cur.execute(query, (nom, prenom, nom, prenom))
