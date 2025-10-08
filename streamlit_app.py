@@ -71,7 +71,7 @@ if start:
     display_name_card(sage_info, pn_adresse)
 
     st.markdown("---")
-    display_ids(person_ids_sage if person_ids_sage else None, person_ids if person_ids else None)
+    display_ids(sage_info, pn_adresse)
 
     st.markdown("---")
     display_mail_card(sage_info, pn_mail)

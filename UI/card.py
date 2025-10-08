@@ -76,7 +76,7 @@ def display_telephone_card(person_info: dict):
 
 def _display_emails_from_df(df: pd.DataFrame, columns: list[str]):
     if df is None or df.empty or df[columns].dropna().empty:
-        st.text("Aucun information trouvée.")
+        st.text("Aucune information trouvée.")
         return False
     
     for col in columns:
@@ -126,12 +126,14 @@ def display_phone_card(person_info_sage: pd.DataFrame | None, person_info_pndata
 
     with col1:
         st.markdown("##### Téléphone Sage")
-        if person_info_sage is not None:
+        if person_info_sage is not None and not person_info_sage.empty:
             for _, row in person_info_sage[["TELEPHONE1", "TELEPHONE2"]].iterrows():
                 if row['TELEPHONE1']:
                     st.text(f"{row['TELEPHONE1']}")
                 if row['TELEPHONE2']:
                     st.text(f"{row['TELEPHONE2'] }")
+        else:
+            st.text("Aucune information trouvée")
 
     with col_mid:
         if person_info_pndata is not None and person_info_sage is not None:
@@ -152,36 +154,39 @@ def display_phone_card(person_info_sage: pd.DataFrame | None, person_info_pndata
 
     with col2:
         st.markdown("##### Téléphone PNData")
-        if person_info_pndata is not None:
+        if person_info_pndata is not None and not person_info_pndata.empty:
             for _, row in person_info_pndata[["INDICATIFTEL", "NUMTEL"]].iterrows():
                 st.text(f"{row['INDICATIFTEL'] if row['INDICATIFTEL'] else ''}  {row['NUMTEL']}")
+        else:
+            st.text("Aucune information trouvée")
 
-def display_ids(sage_id: list[str], pndata_id: list[str]):
+def display_ids(sage_df: pd.DataFrame, pndata_df: pd.DataFrame):
     st.subheader("ID")
 
     col1, col_mid, col2 = st.columns([4, 1, 4])
 
     with col1:
         st.markdown("##### ID Sage")
-        if sage_id is None or len(sage_id) == 0:
+        if sage_df is None or len(sage_df) == 0:
             st.text("Aucun ID Sage trouvé.")
         else:
-            for id in sage_id:
-                st.text(id)
+            for _, row in sage_df.iterrows():
+                st.text(row["IDENTIFIANTCONTACTPN"])
+                st.text(row["IDENTIFIANTSAGEFRP1000"])
     
     with col_mid:
-        if sage_id and pndata_id:
-            display_equal(int(sage_id[0]) == int(pndata_id[0]))
+        if sage_df is not None and pndata_df is not None and not sage_df.empty and not pndata_df.empty:
+            display_equal(int(sage_df['IDENTIFIANTCONTACTPN']) == int(pndata_df['IDINDIVIDU']))
         else:
             display_equal(False)
 
     with col2:
         st.markdown("##### ID PNData")
-        if pndata_id is None or len(pndata_id) == 0:
+        if pndata_df is None or len(pndata_df) == 0:
             st.text("Aucun ID Sage trouvé.")
         else:
-            for id in pndata_id:
-                st.text(id)
+            for _, row in pndata_df.iterrows():
+                st.text(row["IDINDIVIDU"])
 
 def display_name_card(sage_info: pd.DataFrame | None, pndata_info: pd.DataFrame | None):
     st.subheader("Nom Prénom")
@@ -351,7 +356,7 @@ def display_fonctions_card_entite(info_df: pd.DataFrame, entite_df: pd.DataFrame
         })
         .reset_index()
     )
-    info_df = info_df.sort_values(by="IDREF_LIEN").reset_index()
+    
 
     entite_df = (
         entite_df.groupby("IDINDIVIDU", dropna=False)
@@ -389,14 +394,16 @@ def display_fonctions_card_entite(info_df: pd.DataFrame, entite_df: pd.DataFrame
         show_active = st.checkbox("Afficher uniquement les fonctions actives", value=True)
         if show_active:
             info_df = info_df[(info_df["DATEANNULATION"].isna()) | (info_df["DATEANNULATION"] >= pd.Timestamp.today())]
-
+        
+        info_df = info_df.sort_values(by="IDREF_LIEN").reset_index()
+        # st.dataframe(info_df)
         cols = st.columns(3) 
         for i, row in info_df.iterrows():
             col = cols[i % 3]
 
+
             with col:
                 st.markdown(f"**{row['LIBELLE_LIEN']}**<br>{row['PRENOM']} {row['NOM']}<br>{row['LIB_TYPELIEN']}", unsafe_allow_html=True)
-
                 if st.button("Plus d'informations", key=f"btn_{i}"):
                     st.write(f"📞 {row['NUMTEL']}")
                     st.write(f"📧 {row['ADRMAIL']}")
