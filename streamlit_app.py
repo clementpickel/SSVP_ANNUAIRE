@@ -13,20 +13,6 @@ with st.container():
 # Initialize handler
 sf = AnnuaireHandler()
 
-def handle_params():
-    params = st.query_params
-    if params != None and "selectedoption" in params :
-        if params["selected_option"] == "ID":
-            if id in params and params["id"] != "":
-                return "ID", {"id": params["id"][0]}
-            else:
-                return "ID", None
-    return None, None
-            
-
-
-
-header_selector_option, params = handle_params()
 header_selector_option, params = header_selector()
 
 start = False
