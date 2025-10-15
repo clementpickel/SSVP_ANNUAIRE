@@ -8,14 +8,7 @@ import os
 
 class AnnuaireHandler:
     def __init__(self):
-        self.conn = snowflake.connector.connect(
-            user=os.getenv("SNOWFLAKE_USER"),
-            password=os.getenv("SNOWFLAKE_PASSWORD"),
-            account=os.getenv("SNOWFLAKE_ACCOUNT"),
-            warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
-            database=os.getenv("SNOWFLAKE_DATABASE"),
-            schema=os.getenv("SNOWFLAKE_SCHEMA"),
-        )
+        self.conn = st.connection("snowflake")
         self.cur = self.conn.cursor()
 
     def tuple_to_str(self, t: tuple) -> str:
