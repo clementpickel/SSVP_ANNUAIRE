@@ -1,6 +1,7 @@
 import snowflake.connector
 import pandas as pd
 import os
+import streamlit as st
 
 # for local testing
 # import dotenv 
